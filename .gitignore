@@ -3,6 +3,13 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Node / Capacitor — never commit compiled node_modules or generated android folder
+android-wrapper/node_modules/
+android-wrapper/android/
+node_modules/
+*.py[cod]
+*$py.class
+
 # Environments
 .env
 .venv
