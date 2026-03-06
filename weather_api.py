@@ -180,6 +180,91 @@ def get_weather_forecast_3hrs(api_key: Optional[str] = None,
 
 
 # ──────────────────────────────────────────────
+# 7-DAY DAILY FORECAST
+# ──────────────────────────────────────────────
+def get_7day_forecast(api_key: Optional[str] = None, city: str = "Ahmedabad") -> list:
+    """
+    Returns 7-day daily forecast (max available from free tier is 5 days/40 slots).
+    Each entry: {day, date, min_temp, max_temp, avg_humidity, condition, icon, is_demo}
+    Falls back to realistic Gujarat demo data on failure.
+    """
+    key = api_key or DEFAULT_API_KEY
+    WEATHER_ICONS = {
+        "clear sky": "☀️", "few clouds": "🌤️", "scattered clouds": "⛅",
+        "broken clouds": "☁️", "overcast clouds": "☁️",
+        "light rain": "🌦️", "moderate rain": "🌧️", "heavy intensity rain": "⛈️",
+        "thunderstorm": "⛈️", "snow": "❄️", "mist": "🌫️", "haze": "🌫️",
+        "fog": "🌫️", "drizzle": "🌦️",
+    }
+    DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
+    try:
+        if not key or key.strip() == "":
+            raise ValueError("No API key")
+
+        url = "https://api.openweathermap.org/data/2.5/forecast"
+        params = {"q": f"{city},IN", "appid": key.strip(), "units": "metric", "cnt": 40}
+        resp = requests.get(url, params=params, timeout=8)
+        resp.raise_for_status()
+        data = resp.json()
+
+        from collections import defaultdict
+        daily = defaultdict(lambda: {"temps": [], "humidities": [], "conditions": []})
+        for item in data.get("list", []):
+            dt = datetime.fromtimestamp(item["dt"])
+            day_key = dt.strftime("%Y-%m-%d")
+            daily[day_key]["temps"].append(item["main"]["temp"])
+            daily[day_key]["humidities"].append(item["main"]["humidity"])
+            daily[day_key]["conditions"].append(item["weather"][0]["description"])
+
+        result = []
+        for day_str, vals in sorted(daily.items())[:7]:
+            dt = datetime.strptime(day_str, "%Y-%m-%d")
+            cond = max(set(vals["conditions"]), key=vals["conditions"].count)
+            icon = WEATHER_ICONS.get(cond, "🌡️")
+            result.append({
+                "day":          DAYS[dt.weekday()],
+                "date":         dt.strftime("%b %d"),
+                "min_temp":     round(min(vals["temps"]), 1),
+                "max_temp":     round(max(vals["temps"]), 1),
+                "avg_humidity": round(sum(vals["humidities"]) / len(vals["humidities"]), 0),
+                "condition":    cond.title(),
+                "icon":         icon,
+                "is_demo":      False,
+            })
+        return result
+
+    except Exception as e:
+        print(f"[WARN] 7-day forecast fallback: {e}")
+        # Demo fallback — Gujarat realistic March weather
+        from datetime import timedelta
+        base = get_demo_weather(city)
+        result = []
+        DEMO_CONDITIONS = [
+            ("Clear Sky", "☀️", 2), ("Few Clouds", "🌤️", 1),
+            ("Scattered Clouds", "⛅", 1), ("Clear Sky", "☀️", 1),
+            ("Haze", "🌫️", 1), ("Clear Sky", "☀️", 1), ("Few Clouds", "🌤️", 1),
+        ]
+        today = datetime.now()
+        for i in range(7):
+            dt = today + timedelta(days=i)
+            cond_name, icon, _ = DEMO_CONDITIONS[i % len(DEMO_CONDITIONS)]
+            variation = (i % 3) - 1  # slight daily variation
+            result.append({
+                "day":          DAYS[dt.weekday()],
+                "date":         dt.strftime("%b %d"),
+                "min_temp":     round(base["outdoor_temp"] - 4 + variation, 1),
+                "max_temp":     round(base["outdoor_temp"] + 3 + variation, 1),
+                "avg_humidity": round(base["humidity"] + variation * 2, 0),
+                "condition":    cond_name,
+                "icon":         icon,
+                "is_demo":      True,
+            })
+        return result
+
+
+
+# ──────────────────────────────────────────────
 # APPLIANCE WEATHER IMPACT DESCRIPTION
 # ──────────────────────────────────────────────
 def get_appliance_weather_impact(weather: dict, appliance: str) -> str:

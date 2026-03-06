@@ -16,7 +16,8 @@ import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime, time as dt_time
 
-from weather_api  import (get_current_weather, get_weather_forecast_3hrs,
+from weather_api import (
+    get_7day_forecast,get_current_weather, get_weather_forecast_3hrs,
                            get_appliance_weather_impact, GUJARAT_CITIES,
                            DEFAULT_API_KEY)
 from predictor    import predict_session
@@ -1741,10 +1742,11 @@ elif page == "🎯 Judge's Demo Panel":
     st.markdown("A unified, interactive view proving all 4 core requirements for testing.")
     st.markdown("---")
     
-    tab1, tab2, tab3 = st.tabs([
+    tab1, tab2, tab3, tab4 = st.tabs([
         "1️⃣ Voltage Drop Proof", 
         "2️⃣ Appliance Setup & Simulator", 
-        "3️⃣ Live Custom Test Data"
+        "3️⃣ Live Custom Test Data",
+        "🌤️ 7-Day Weather Forecast"
     ])
 
     # ── TAB 1: Voltage Drop Proof ─────────────────────────────
@@ -1982,6 +1984,105 @@ elif page == "🎯 Judge's Demo Panel":
             else:
                 st.info("← Enter data manually or fetch a random row, then click Run Test.")
 
+
+    # ── TAB 4: 7-Day Weather Forecast ────────────────────────
+    with tab4:
+        st.markdown("### 🌤️ 7-Day Weather Forecast & Energy Impact")
+        st.info("Live weather forecast from OpenWeatherMap. Shows how upcoming weather conditions will affect your appliance energy usage.")
+
+        wf_city = st.selectbox("📍 Select City", GUJARAT_CITIES, index=0, key="jd_wf_city")
+        
+        with st.spinner("Fetching 7-day forecast..."):
+            forecast_7 = get_7day_forecast(api_key, wf_city)
+
+        if not forecast_7:
+            st.error("Could not fetch forecast. Please check your API key.")
+        else:
+            # Demo badge
+            if forecast_7[0].get("is_demo"):
+                st.warning("⚠️ Showing demo forecast data (Gujarat estimates). Add a valid OpenWeather API key for live data.")
+            else:
+                st.success(f"✅ Live 7-day forecast for **{wf_city}** from OpenWeatherMap")
+
+            st.markdown("#### 📅 Daily Forecast")
+
+            # Render each day as a card in a row
+            cols = st.columns(len(forecast_7))
+            for i, day_data in enumerate(forecast_7):
+                temp_color = "#ef4444" if day_data["max_temp"] >= 38 else "#fbbf24" if day_data["max_temp"] >= 32 else "#00ff88"
+                with cols[i]:
+                    st.markdown(f"""
+                    <div style="background:#161b22;border:1px solid #30363d;border-radius:10px;padding:12px;text-align:center;min-height:180px">
+                      <div style="font-size:0.75rem;color:#8b949e;font-weight:600">{day_data['day'][:3].upper()}</div>
+                      <div style="font-size:0.7rem;color:#555">{day_data['date']}</div>
+                      <div style="font-size:2rem;margin:6px 0">{day_data['icon']}</div>
+                      <div style="font-size:0.7rem;color:#8b949e;margin-bottom:6px">{day_data['condition']}</div>
+                      <div style="color:{temp_color};font-weight:700;font-size:0.95rem">{day_data['max_temp']}°C</div>
+                      <div style="color:#8b949e;font-size:0.8rem">{day_data['min_temp']}°C</div>
+                      <div style="font-size:0.7rem;color:#4b9cd3;margin-top:4px">💧 {int(day_data['avg_humidity'])}%</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+            st.markdown("#### ⚡ Energy Impact Forecast")
+            st.markdown("Based on upcoming temperatures, here's how your AC energy cost will vary:")
+
+            import plotly.graph_objects as go
+            days_labels = [f"{d['day'][:3]}\n{d['date']}" for d in forecast_7]
+            max_temps   = [d["max_temp"] for d in forecast_7]
+            min_temps   = [d["min_temp"] for d in forecast_7]
+
+            # AC energy penalty estimate: at 38°C standard, scale relatively
+            ac_energy_est = [round(1.5 * ((t / 38) ** 1.5), 2) for t in max_temps]
+
+            fig_w = go.Figure()
+            fig_w.add_trace(go.Bar(
+                x=days_labels, y=max_temps, name="Max Temp (°C)",
+                marker_color=["#ef4444" if t >= 38 else "#fbbf24" if t >= 32 else "#00ff88" for t in max_temps],
+                opacity=0.8, yaxis="y"
+            ))
+            fig_w.add_trace(go.Scatter(
+                x=days_labels, y=ac_energy_est, name="Est. AC kWh/hr",
+                line=dict(color="#3b82f6", width=3),
+                marker=dict(size=8, color="#3b82f6"),
+                yaxis="y2"
+            ))
+            fig_w.update_layout(
+                title=f"7-Day Temperature & Estimated AC Load — {wf_city}",
+                yaxis=dict(title="Temperature (°C)", color="#e6edf3"),
+                yaxis2=dict(title="Est. AC kWh/hr", overlaying="y", side="right", color="#3b82f6"),
+                plot_bgcolor="#0d1117", paper_bgcolor="#0d1117",
+                font_color="#e6edf3", height=380,
+                legend=dict(x=0, y=1.1, orientation="h"),
+                margin=dict(l=0, r=0, t=40, b=0)
+            )
+            st.plotly_chart(fig_w, use_container_width=True)
+
+            # Per-day energy tip
+            st.markdown("#### 💡 Day-by-Day Energy Tips")
+            for day_data in forecast_7:
+                t = day_data["max_temp"]
+                if t >= 40:
+                    tip = "🔴 Extreme heat — pre-cool your AC before 3 PM to avoid peak-hour surge pricing."
+                    col = "#ef4444"
+                elif t >= 35:
+                    tip = "🟠 Hot day — set AC setpoint to 26°C and use ceiling fans to reduce compressor load."
+                    col = "#f97316"
+                elif t >= 28:
+                    tip = "🟡 Warm — consider running AC on timer mode. Good day for washing machine off-peak."
+                    col = "#fbbf24"
+                else:
+                    tip = "🟢 Pleasant — minimal AC needed. Great day to air-dry clothes and skip the geyser."
+                    col = "#00ff88"
+                st.markdown(f"""
+                <div style="background:#161b22;border-left:4px solid {col};border-radius:6px;padding:10px 14px;margin-bottom:6px;display:flex;gap:12px;align-items:center">
+                  <span style="font-size:1.5rem">{day_data['icon']}</span>
+                  <div>
+                    <span style="color:{col};font-weight:700">{day_data['day']} {day_data['date']}</span>
+                    <span style="color:#8b949e;font-size:0.85rem"> — {day_data['max_temp']}°C / {day_data['min_temp']}°C — {day_data['condition']}</span><br>
+                    <span style="color:#e6edf3;font-size:0.85rem">{tip}</span>
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
 
 
 # ─────────────────────────────────────────────
