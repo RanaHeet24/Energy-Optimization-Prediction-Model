@@ -5,30 +5,110 @@ Home Appliance Energy Optimization System — Streamlit Dashboard
 Run: streamlit run app/dashboard.py
 """
 
+# ── Path setup FIRST (before any local imports) ───────────────────────────────
 import sys, os
 _ROOT = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, _ROOT)
-sys.path.insert(0, os.path.join(_ROOT, "utils"))
+for _p in [_ROOT, os.path.join(_ROOT, "utils")]:
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
-
+# ── Standard library ──────────────────────────────────────────────────────────
 import json
-import numpy as np
-import pandas as pd
-import streamlit as st
-import plotly.graph_objects as go
-import plotly.express as px
 from datetime import datetime, time as dt_time
 
-from weather_api import (get_current_weather, get_weather_forecast_3hrs,
-                           get_appliance_weather_impact, get_7day_forecast,
-                           GUJARAT_CITIES, DEFAULT_API_KEY)
-from predictor    import predict_session
-from optimizer    import ApplianceOptimizer
-from voltage_calculator import VoltageDropCalculator
-from precooling_simulator import PreCoolingSimulator
-from home_profile import HomeProfile, get_default_wattage, is_peak_hour, DAYS_OF_WEEK
-from schedule_generator import ScheduleGenerator, TARIFF_TIERS
-from test_validator import TestValidator, predict_physics, physical_sanity_check, TEST_CASES
+# ── Third-party: fail loudly only ONCE with a clear message ──────────────────
+_MISSING = []
+
+try:
+    import numpy as np
+except ImportError:
+    _MISSING.append("numpy"); import types; np = types.ModuleType("numpy")
+
+try:
+    import pandas as pd
+except ImportError:
+    _MISSING.append("pandas"); import types; pd = types.ModuleType("pandas")
+
+try:
+    import streamlit as st
+except ImportError as _e:
+    raise ImportError(f"streamlit is required. Add it to requirements.txt. Error: {_e}") from _e
+
+try:
+    import plotly.graph_objects as go
+    import plotly.express as px
+except ImportError:
+    _MISSING.append("plotly")
+    import types
+    go = types.ModuleType("plotly.graph_objects")
+    px = types.ModuleType("plotly.express")
+
+if _MISSING:
+    st.error(f"⚠️ Missing packages: {', '.join(_MISSING)}. Check requirements.txt and redeploy.")
+    st.stop()
+
+# ── Local modules (all wrapped so one bad import never kills the whole app) ───
+try:
+    from weather_api import (get_current_weather, get_weather_forecast_3hrs,
+                               get_appliance_weather_impact, get_7day_forecast,
+                               GUJARAT_CITIES, DEFAULT_API_KEY)
+except Exception as _e:
+    st.error(f"❌ weather_api import failed: {_e}"); st.stop()
+
+try:
+    from predictor import predict_session
+except Exception as _e:
+    st.error(f"❌ predictor import failed: {_e}"); st.stop()
+
+try:
+    from optimizer import ApplianceOptimizer
+except Exception as _e:
+    st.error(f"❌ optimizer import failed: {_e}"); st.stop()
+
+try:
+    from voltage_calculator import VoltageDropCalculator
+except Exception as _e:
+    st.warning(f"⚠️ voltage_calculator not loaded: {_e}")
+    class VoltageDropCalculator:
+        def get_appliance_type_category(self, a): return "electronic"
+        def calculate_voltage_impact(self, a, w, h):
+            return {"grid_voltage":230,"voltage_drop_percent":0,"category":"electronic",
+                    "multiplier":1.0,"actual_watts":w,"extra_watts":0,"extra_kwh_per_hour":0,
+                    "extra_cost_per_hour":0,"monthly_extra_cost":0,"research_source":"N/A",
+                    "is_peak_hour":False,"warning":"Fallback"}
+
+try:
+    from precooling_simulator import PreCoolingSimulator
+except Exception as _e:
+    st.warning(f"⚠️ precooling_simulator not loaded: {_e}")
+    class PreCoolingSimulator: pass
+
+try:
+    from home_profile import HomeProfile, get_default_wattage, is_peak_hour, DAYS_OF_WEEK
+except Exception as _e:
+    st.warning(f"⚠️ home_profile not loaded: {_e}")
+    class HomeProfile:
+        def get_all_appliances(self): return []
+    def get_default_wattage(a): return 1000
+    def is_peak_hour(h): return 9 <= h <= 22
+    DAYS_OF_WEEK = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]
+
+try:
+    from schedule_generator import ScheduleGenerator, TARIFF_TIERS
+except Exception as _e:
+    st.warning(f"⚠️ schedule_generator not loaded: {_e}")
+    class ScheduleGenerator: pass
+    TARIFF_TIERS = {}
+
+try:
+    from test_validator import TestValidator, predict_physics, physical_sanity_check, TEST_CASES
+except Exception as _e:
+    st.warning(f"⚠️ test_validator not loaded: {_e}")
+    class TestValidator: pass
+    def predict_physics(x): return {"kwh": 0.5, "cost": 3.0}
+    def physical_sanity_check(x): return True
+    TEST_CASES = []
+
 
 # ─────────────────────────────────────────────
 # PAGE CONFIG
