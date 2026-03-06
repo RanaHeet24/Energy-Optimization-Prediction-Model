@@ -31,6 +31,10 @@ jobs:
         working-directory: android-wrapper
         run: npm install
 
+      - name: Fix Capacitor binary permissions
+        working-directory: android-wrapper
+        run: chmod +x ./node_modules/.bin/cap
+
       - name: Prepare web assets directory
         working-directory: android-wrapper
         run: |
