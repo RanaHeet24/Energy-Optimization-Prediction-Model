@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" 
+    content="width=device-width,
+    initial-scale=1.0,
+    maximum-scale=1.0,
+    user-scalable=no">
+  <title>EnergyAI</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background: #0D1117;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: sans-serif;
+      color: white;
+      text-align: center;
+    }
+    .logo { font-size:64px; margin-bottom:12px; }
+    .title {
+      font-size: 28px;
+      color: #00FF88;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    .sub {
+      font-size: 14px;
+      color: #8B949E;
+      margin-bottom: 32px;
+    }
+    .spinner {
+      width: 48px; height: 48px;
+      border: 4px solid #21262D;
+      border-top: 4px solid #00FF88;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div>
+    <div class="logo">⚡</div>
+    <div class="title">EnergyAI</div>
+    <div class="sub">Home Appliance Energy Optimizer</div>
+    <div class="spinner"></div>
+  </div>
+  <script>
+    setTimeout(() => {
+      window.location.replace(
+        "https://energy-optimization-prediction-model-narpgj8kkawx63syk7k98i.streamlit.app"
+      )
+    }, 2500)
+  </script>
+</body>
+</html>

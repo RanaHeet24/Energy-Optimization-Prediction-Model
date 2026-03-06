@@ -1,0 +1,27 @@
+{
+  "appId": "com.energyai.optimizer",
+  "appName": "EnergyAI",
+  "webDir": "www",
+  "server": {
+    "url": "https://energy-optimization-prediction-model-narpgj8kkawx63syk7k98i.streamlit.app",
+    "cleartext": true,
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2500,
+      "backgroundColor": "#0D1117",
+      "showSpinner": true,
+      "spinnerColor": "#00FF88",
+      "launchAutoHide": true
+    },
+    "StatusBar": {
+      "style": "Dark",
+      "backgroundColor": "#0D1117"
+    }
+  },
+  "android": {
+    "allowMixedContent": true,
+    "backgroundColor": "#0D1117"
+  }
+}

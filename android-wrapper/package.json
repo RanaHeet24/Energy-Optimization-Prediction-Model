@@ -1,0 +1,15 @@
+{
+    "name": "energyai-android",
+    "version": "1.0.0",
+    "description": "EnergyAI Android App",
+    "scripts": {
+        "build": "echo done"
+    },
+    "dependencies": {
+        "@capacitor/android": "^5.7.0",
+        "@capacitor/cli": "^5.7.0",
+        "@capacitor/core": "^5.7.0",
+        "@capacitor/splash-screen": "^5.7.0",
+        "@capacitor/status-bar": "^5.7.0"
+    }
+}
