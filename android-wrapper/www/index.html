@@ -3,10 +3,8 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,
-    initial-scale=1.0,
-    maximum-scale=1.0,
-    user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;">
   <title>EnergyAI</title>
   <style>
     * {
@@ -20,15 +18,7 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-    }
-
-    #frame {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      border: none;
+      background: #0D1117;
     }
 
     #splash {
@@ -42,16 +32,16 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      z-index: 100;
+      z-index: 999;
       font-family: sans-serif;
       color: white;
       text-align: center;
-      transition: opacity 0.5s ease;
+      transition: opacity 0.6s ease;
     }
 
     .logo {
-      font-size: 64px;
-      margin-bottom: 12px;
+      font-size: 72px;
+      margin-bottom: 16px;
     }
 
     .title {
@@ -64,7 +54,7 @@
     .sub {
       font-size: 14px;
       color: #8B949E;
-      margin-bottom: 32px;
+      margin-bottom: 40px;
     }
 
     .spinner {
@@ -74,7 +64,6 @@
       border-top: 4px solid #00FF88;
       border-radius: 50%;
       animation: spin 1s linear infinite;
-      margin: 0 auto;
     }
 
     @keyframes spin {
@@ -82,10 +71,21 @@
         transform: rotate(360deg);
       }
     }
+
+    #frame {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #0D1117;
+    }
   </style>
 </head>
 
 <body>
+
   <div id="splash">
     <div class="logo">⚡</div>
     <div class="title">EnergyAI</div>
@@ -93,30 +93,37 @@
     <div class="spinner"></div>
   </div>
 
-  <iframe id="frame" src="https://energy-optimization-prediction-model-narpgj8kkawx63syk7k98i.streamlit.app"
-    allowfullscreen allow="accelerometer; camera; encrypted-media; geolocation; gyroscope; microphone; midi"
-    sandbox="allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation allow-top-navigation-by-user-activation">
+  <iframe id="frame" src="https://energy-optimization-prediction-model-narpgj8kkawx63syk7k98i.streamlit.app/?embed=true"
+    allowfullscreen
+    allow="accelerometer; camera; encrypted-media; geolocation; gyroscope; microphone; midi; clipboard-write; clipboard-read"
+    loading="lazy">
   </iframe>
 
   <script>
-    var frame = document.getElementById('frame');
     var splash = document.getElementById('splash');
+    var frame = document.getElementById('frame');
 
-    // Hide splash when iframe loads
-    frame.onload = function () {
+    frame.addEventListener('load', function () {
       setTimeout(function () {
         splash.style.opacity = '0';
-        setTimeout(function () {
-          splash.style.display = 'none';
-        }, 500);
-      }, 1000);
-    };
+        setTimeout(function () { splash.style.display = 'none'; }, 650);
+      }, 1200);
+    });
 
-    // Fallback: if iframe blocks embedding, do a hard redirect
-    frame.onerror = function () {
+    // If iframe fails entirely, go directly to the URL
+    frame.addEventListener('error', function () {
       window.location.href = "https://energy-optimization-prediction-model-narpgj8kkawx63syk7k98i.streamlit.app";
-    };
+    });
+
+    // Safety fallback after 15s if nothing loads
+    setTimeout(function () {
+      if (splash.style.display !== 'none') {
+        splash.style.opacity = '0';
+        setTimeout(function () { splash.style.display = 'none'; }, 650);
+      }
+    }, 15000);
   </script>
+
 </body>
 
 </html>
