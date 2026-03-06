@@ -31,29 +31,27 @@ jobs:
         working-directory: android-wrapper
         run: npm install
 
-      - name: Initialize Capacitor
+      - name: Prepare web assets directory
         working-directory: android-wrapper
         run: |
           mkdir -p www
-          echo "<html><head><title>App</title></head><body></body></html>" > www/index.html
-          npx cap init EnergyAI com.energyai.optimizer \
-            --web-dir www || true
+          echo '<html><head><title>EnergyAI</title></head><body></body></html>' > www/index.html
+
+      - name: Initialize Capacitor
+        working-directory: android-wrapper
+        run: ./node_modules/.bin/cap init EnergyAI com.energyai.optimizer --web-dir www || true
 
       - name: Add Android platform
         working-directory: android-wrapper
-        run: npx cap add android
-
-      - name: Install Capacitor CLI
-        working-directory: android-wrapper
-        run: npm install -g @capacitor/cli
+        run: ./node_modules/.bin/cap add android
 
       - name: Copy web assets
         working-directory: android-wrapper
-        run: npx cap copy android
+        run: ./node_modules/.bin/cap copy android
 
       - name: Sync Capacitor
         working-directory: android-wrapper
-        run: npx cap sync android
+        run: ./node_modules/.bin/cap sync android
 
       - name: Make gradlew executable
         working-directory: android-wrapper/android
@@ -85,7 +83,4 @@ jobs:
             3. Settings → Install Unknown Apps → Allow
             4. Open APK file → Install
             5. Open EnergyAI from home screen!
-
-            **Live Web App:**
-            https://energy-optimization-prediction-model-narpgj8kkawx63syk7k98i.streamlit.app
           files: android-wrapper/android/app/build/outputs/apk/debug/app-debug.apk
