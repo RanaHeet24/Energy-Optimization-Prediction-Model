@@ -16,10 +16,9 @@ import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime, time as dt_time
 
-from weather_api import (
-    get_7day_forecast,get_current_weather, get_weather_forecast_3hrs,
-                           get_appliance_weather_impact, GUJARAT_CITIES,
-                           DEFAULT_API_KEY)
+from weather_api import (get_current_weather, get_weather_forecast_3hrs,
+                           get_appliance_weather_impact, get_7day_forecast,
+                           GUJARAT_CITIES, DEFAULT_API_KEY)
 from predictor    import predict_session
 from optimizer    import ApplianceOptimizer
 from voltage_calculator import VoltageDropCalculator
