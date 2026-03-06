@@ -34,13 +34,14 @@ jobs:
       - name: Initialize Capacitor
         working-directory: android-wrapper
         run: |
+          mkdir -p www
+          echo "<html><head><title>App</title></head><body></body></html>" > www/index.html
           npx cap init EnergyAI com.energyai.optimizer \
             --web-dir www || true
 
       - name: Add Android platform
         working-directory: android-wrapper
-        run: |
-          npx cap add android || true
+        run: npx cap add android
 
       - name: Install Capacitor CLI
         working-directory: android-wrapper
