@@ -1,0 +1,43 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IDEs / Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project specific data and models (Optional: remove if you want to commit models)
+# Since models might be large, it's generally good practice to ignore them.
+# However, if required for GitHub Actions, keep them commented out.
+# models/saved/*.pkl
+
+# Streamlit config (if you have secrets)
+.streamlit/secrets.toml
+
+# Virtual environments
+pip-log.txt
+pip-delete-this-directory.txt
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

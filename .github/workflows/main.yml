@@ -1,0 +1,93 @@
+name: Energy ML Pipeline CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11"]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgomp1
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Step 1 - Generate Dataset
+        run: |
+          echo "Generating 12,000+ physics-accurate appliance energy usage rows..."
+          python dataset_generator.py
+
+      - name: Step 2 - Verify Dataset Output
+        run: |
+          if [ -f "data/raw/appliance_energy_dataset.csv" ]; then
+            echo "Dataset generated successfully."
+            wc -l data/raw/appliance_energy_dataset.csv
+          else
+            echo "Dataset generation failed!"
+            exit 1
+          fi
+
+      - name: Step 3 - Train LightGBM/XGBoost Ensemble Model
+        run: |
+          echo "Training Multi-Model Ensemble..."
+          python train_model.py
+
+      - name: Step 4 - Verify Model Artifacts
+        run: |
+          echo "Checking for saved models..."
+          ls -la models/saved/
+          
+          # Check for key artifacts
+          if [ ! -f "models/saved/xgboost_model.pkl" ] || [ ! -f "models/saved/lightgbm_model.pkl" ]; then
+            echo "Model training failed to output models!"
+            exit 1
+          fi
+
+      - name: Step 5 - Verify Metrics (R2 > 0.90)
+        run: |
+          echo "Verifying Model Metrics..."
+          python -c "
+          import json
+          with open('models/saved/model_metrics.json', 'r') as f:
+              metrics = json.load(f)
+              r2 = metrics.get('r2', 0)
+              if r2 < 0.90:
+                  print(f'❌ FAIL: R2 Score is too low: {r2}')
+                  exit(1)
+              else:
+                  print(f'✅ PASS: R2 Score is {r2}')
+          "
+
+      - name: Upload Model Artifacts
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: ml-models-${{ matrix.python-version }}
+          path: |
+            models/saved/
+            data/raw/appliance_energy_dataset.csv
+          retention-days: 7
