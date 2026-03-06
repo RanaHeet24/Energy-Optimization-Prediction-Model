@@ -2,11 +2,6 @@
   "appId": "com.energyai.optimizer",
   "appName": "EnergyAI",
   "webDir": "www",
-  "server": {
-    "url": "https://energy-optimization-prediction-model-narpgj8kkawx63syk7k98i.streamlit.app",
-    "cleartext": true,
-    "androidScheme": "https"
-  },
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 2500,
@@ -22,6 +17,7 @@
   },
   "android": {
     "allowMixedContent": true,
-    "backgroundColor": "#0D1117"
+    "backgroundColor": "#0D1117",
+    "webContentsDebuggingEnabled": true
   }
 }

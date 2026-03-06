@@ -35,12 +35,6 @@ jobs:
         working-directory: android-wrapper
         run: chmod +x ./node_modules/.bin/cap
 
-      - name: Prepare web assets directory
-        working-directory: android-wrapper
-        run: |
-          mkdir -p www
-          echo '<html><head><title>EnergyAI</title></head><body></body></html>' > www/index.html
-
       - name: Initialize Capacitor
         working-directory: android-wrapper
         run: ./node_modules/.bin/cap init EnergyAI com.energyai.optimizer --web-dir www || true
