@@ -8,7 +8,29 @@ import os, json
 import numpy as np
 from typing import Optional
 from datetime import datetime, timedelta
-from voltage_calculator import VoltageDropCalculator
+try:
+    from voltage_calculator import VoltageDropCalculator
+    VOLTAGE_CALC_OK = True
+except ImportError:
+    # Inline fallback so import never fails on Streamlit Cloud
+    VOLTAGE_CALC_OK = False
+    class VoltageDropCalculator:  # type: ignore
+        def calculate_voltage_impact(self, app, watts, hour):
+            v = 235 if hour < 6 else (215 if hour <= 10 else (205 if hour >= 18 else 225))
+            mult = {235: 1.00, 225: 1.04, 215: 1.11, 205: 1.22}.get(v, 1.00)
+            drop = round(((230 - v) / 230) * 100, 2)
+            return {
+                "grid_voltage": v, "voltage_drop_percent": drop,
+                "category": "motor", "multiplier": mult,
+                "actual_watts": watts * mult, "extra_watts": watts * (mult - 1),
+                "extra_kwh_per_hour": (watts * (mult - 1)) / 1000,
+                "extra_cost_per_hour": 0.0, "monthly_extra_cost": 0.0,
+                "research_source": "Inline fallback", "is_peak_hour": 9 <= hour <= 22,
+                "warning": "Voltage Calculator not loaded",
+            }
+        def get_appliance_type_category(self, app):
+            return "motor" if app in {"AC", "Refrigerator", "Washing Machine", "Ceiling Fan"} else \
+                   "resistive" if app in {"Geyser", "Electric Iron", "Microwave"} else "electronic"
 
 try:
     import joblib
