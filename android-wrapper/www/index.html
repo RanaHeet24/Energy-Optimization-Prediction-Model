@@ -93,16 +93,19 @@
     <div class="spinner"></div>
   </div>
 
-  <iframe id="frame" src="https://energy-optimization-prediction-model-narpgj8kkawx63syk7k98i.streamlit.app/?embed=true"
+  <iframe id="frame"
+    src="https://energy-optimization-prediction-model-narpgj8kkawx63syk7k98i.streamlit.app/?embed=true&embed_options=hide_footer,hide_toolbar,dark_theme"
     allowfullscreen
     allow="accelerometer; camera; encrypted-media; geolocation; gyroscope; microphone; midi; clipboard-write; clipboard-read"
-    loading="lazy">
+    loading="lazy"
+    sandbox="allow-forms allow-modals allow-pointer-lock allow-popups allow-same-origin allow-scripts allow-top-navigation-by-user-activation">
   </iframe>
 
   <script>
     var splash = document.getElementById('splash');
     var frame = document.getElementById('frame');
 
+    // Hide splash when iframe loads
     frame.addEventListener('load', function () {
       setTimeout(function () {
         splash.style.opacity = '0';
@@ -110,18 +113,32 @@
       }, 1200);
     });
 
-    // If iframe fails entirely, go directly to the URL
-    frame.addEventListener('error', function () {
-      window.location.href = "https://energy-optimization-prediction-model-narpgj8kkawx63syk7k98i.streamlit.app";
-    });
-
-    // Safety fallback after 15s if nothing loads
+    // Safety fallback after 15s
     setTimeout(function () {
       if (splash.style.display !== 'none') {
         splash.style.opacity = '0';
         setTimeout(function () { splash.style.display = 'none'; }, 650);
       }
     }, 15000);
+
+    // Intercept ALL clicks to block external redirects (e.g. Fullscreen button)
+    document.addEventListener('click', function (e) {
+      var target = e.target.closest('a');
+      if (target && target.href) {
+        var url = target.href;
+        // Block any navigation that tries to leave this WebView
+        if (url.indexOf('streamlit.app') === -1 && url.indexOf('javascript:') === -1) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }
+    }, true);
+
+    // Block window.open calls (used by Fullscreen button)
+    window.open = function (url) {
+      // Swallow any external open attempt — stay in the WebView
+      return null;
+    };
   </script>
 
 </body>
